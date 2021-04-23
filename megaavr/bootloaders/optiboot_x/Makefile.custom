@@ -1,0 +1,12 @@
+# Part of SpenceKonde/megaTinyCore optiboot_x
+
+# example custom target
+# this is copied from one of the main Makefile targets as an example
+# add your own below
+HELPTEXT += "custom - custom target example\n"
+mycustom: TARGET = attiny412
+mycustom:
+	$(MAKE) -f $(MF) optiboot_txy2.hex UARTTX=A6 TIMEOUT=8 LED=A3
+
+# add your custom target here. Use above as template
+

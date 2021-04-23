@@ -346,6 +346,9 @@ HELPTEXT += "target freeduino4809chip - WestfW ATmega4809 40pin DIP boards.\n"
 freeduino4809chip:
 	$(MAKE) -f $(MF) optiboot_atmega4809.hex UARTTX=A4 TIMEOUT=1 LED=A7 RESETPIN=1
 
+# Allow custom Makefile targets
+include Makefile.custom
+
 #---------------------------------------------------------------------------
 #
 # Generic build instructions
