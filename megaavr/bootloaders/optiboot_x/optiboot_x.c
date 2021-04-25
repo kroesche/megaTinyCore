@@ -79,6 +79,13 @@
 /* UART number (0..n) for devices with more than          */
 /* one hardware uart (644P, 1284P, etc)                   */
 /*                                                        */
+/* ONEWIRE:                                               */
+/* Run the serial port in "one wire" mode. This is half   */
+/* duplex but not the same thing as RS-485. This can be   */
+/* if the hardware is set up for half duplex serial.      */
+/* NOTE the host boot loader utility would also need to   */
+/* half-duplex-aware                                      */
+/*                                                        */
 /**********************************************************/
 
 /**********************************************************/
@@ -108,6 +115,7 @@
 /**********************************************************/
 /* Edit History:                                          */
 /*                                                        */
+/* Apr 2021 JLK add ONEWIRE mode                          */
 /* Sep 2020                                               */
 /* 9.1 fix do_nvmctrl                                     */
 /* Aug 2019                                               */
@@ -429,8 +437,14 @@ int main(void) {
   }
   MYUART.DBGCTRL = 1;  // run during debug
   MYUART.CTRLC = (USART_CHSIZE_gm & USART_CHSIZE_8BIT_gc);  // Async, Parity Disabled, 1 StopBit
+  #ifndef ONEWIRE   // normal full duplex
   MYUART.CTRLA = 0;  // Interrupts: all off
   MYUART.CTRLB = USART_RXEN_bm | USART_TXEN_bm;
+  #else     // ONEWIRE half duplex
+  // onewire mode is half duplex. the TX and RX are shared
+  MYUART.CTRLA = USART_LBME_bm; // enable loop back for half duplex
+  MYUART.CTRLB = USART_RXEN_bm | USART_TXEN_bm | USART_ODME_bm;
+  #endif    // ONEWIRE
 
   // Set up watchdog to trigger after a bit
   //  (nominally:, 1s for autoreset, longer for manual)
@@ -570,9 +584,26 @@ int main(void) {
 }
 
 void putch(char ch) {
+  #ifndef ONEWIRE   // normal full duplex
+  // make sure there is space in the TX output before writing a byte
+  // then write the byte and return
   while (0 == (MYUART.STATUS & USART_DREIF_bm))
     ;
   MYUART.TXDATAL = ch;
+
+  #else // ONEWIRE half duplex mode
+  // in half-duplex mode we wait for the byte we just sent to clear so
+  // that we can soak it up (and not confuse the parser with our own data)
+  // Therefore we dont need to wait before sending the byte because we know
+  // the TX shift register is already clear
+  MYUART.TXDATAL = ch;
+  // now need to wait for it to be completely transmitted
+  while (0 == (MYUART.STATUS & USART_TXCIF_bm))
+    ;
+  MYUART.STATUS = USART_TXCIF_bm;   // clear the tx clear flag
+  // now wait for a byte to be available on RX and read it and discard
+  getch();
+  #endif
 }
 
 uint8_t getch(void) {

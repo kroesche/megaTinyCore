@@ -10,7 +10,7 @@ mycustom:
 
 # add your custom target here. Use above as template
 
-HELPTEXT += "bmsnodev3 - BMSNode V3 board with 1614 MCU\n"
+HELPTEXT += "bmsnodev3 - BMSNode V3 board with 1614 MCU and onewire half-duplex\n"
 bmsnodev3: TARGET = attiny1614
 bmsnodev3:
-	$(MAKE) -f $(MF) optiboot_bmsnodev3.hex UARTTX=A1 TIMEOUT=4 LED=A6 BAUD_RATE=9600
+	$(MAKE) -f $(MF) optiboot_bmsnodev3.hex UARTTX=A1 TIMEOUT=4 LED=A6 BAUD_RATE=9600 CUST_OPTS=-DONEWIRE CUSTOM_VERSION=104
